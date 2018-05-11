@@ -57,3 +57,26 @@ export function setPivot(obj, x, y) {
   obj.setPositionX(obj.position.x + x - originPivotX);
   obj.setPositionY(obj.position.y + y - originPivotY);
 }
+
+/**
+ * 获取 obj 用于碰撞盒计算的坐标跟宽高
+ * @param {Tiny.Sprite} obj
+ */
+export function getCollisionRegion(obj) {
+  // 使用全局坐标来计算
+  let { x, y } = obj.getGlobalPosition();
+
+  // 还要考虑缩放比率，不同配置中拿到的宽度是不同的
+  const winW = Tiny.config.fixSize ? Tiny.config.width : window.innerWidth;
+  const rate = winW / Tiny.WIN_SIZE.width;
+
+  // 还要考虑中心点
+  const pivot = obj.getPivot();
+
+  return {
+    x: x / rate - pivot.x,
+    y: y / rate - pivot.y,
+    width: obj.width,
+    height: obj.height,
+  };
+}

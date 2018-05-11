@@ -1,9 +1,15 @@
-import { getTargetBoxPos, direction, caleRelateTargetPos, setPivot } from './utils';
+import { getTargetBoxPos, direction, caleRelateTargetPos, setPivot, getCollisionRegion } from './utils';
+import inside from 'point-in-polygon';
 
 class StartLayer extends Tiny.Container {
   constructor() {
     super();
 
+    this.init();
+    this.handleTouch();
+  }
+
+  init() {
     this.ant = this.createAnt();
     this.currentBox = this.createBox();
     // 将蚂蚁放到 box 组中
@@ -22,8 +28,20 @@ class StartLayer extends Tiny.Container {
 
     // 再来一个盒子
     this.targetBox = this.dropBox();
+  }
 
-    this.handleTouch();
+  reset() {
+    // 清空所有元素
+    while (this.children.length > 0) {
+      const b = this.children[this.children.length - 1];
+      b.parent.removeChild(b);
+    }
+
+    // 恢复屏幕坐标
+    this.setPosition(0, 0);
+
+    // 重新加载初始元素
+    this.init();
   }
 
   createAnt() {
@@ -78,29 +96,43 @@ class StartLayer extends Tiny.Container {
         targetBoxDelta = maxTargetDelta;
       }
 
-      // var targetBoxDelta = this.targetBoxDelta;
+      // var targetBoxDelta = 270;
       this.jump(targetBoxDelta, this.targetBoxDirection, () => {
         // 跳完后
         this.isJumping = false;
 
-        // 因为要更换 ant 的 group，所以要计算 ant 相对 targetBox 的位置
-        var { x, y } = caleRelateTargetPos(this.ant, this.targetBox);
-        this.ant.setPosition(x, y);
-        this.targetBox.addChild(this.ant);
+        const jumpSuccess = this.jumpResult();
 
-        this.currentBox = this.targetBox;
-        this.boxes.push(this.currentBox);
-
-        // 确定下一个盒子的方向和位移
-        this.setTargetBoxDirectionAndDelta();
-
-        // 移动屏幕
-        this.sceneMove();
-
-        // 再来一个盒子
-        this.targetBox = this.dropBox();
+        if (jumpSuccess) {
+          this._jumpSuccess();
+        } else {
+          this._jumpFail();
+        }
       });
     });
+  }
+
+  _jumpSuccess() {
+    // 因为要更换 ant 的 group，所以要计算 ant 相对 targetBox 的位置
+    var { x, y } = caleRelateTargetPos(this.ant, this.targetBox);
+    this.ant.setPosition(x, y);
+    this.targetBox.addChild(this.ant);
+
+    this.currentBox = this.targetBox;
+    this.boxes.push(this.currentBox);
+
+    // 确定下一个盒子的方向和位移
+    this.setTargetBoxDirectionAndDelta();
+
+    // 移动屏幕
+    this.sceneMove();
+
+    // 再来一个盒子
+    this.targetBox = this.dropBox();
+  }
+
+  _jumpFail() {
+    this.reset();
   }
 
   jump(targetDelta, direction, onComplete) {
@@ -134,6 +166,66 @@ class StartLayer extends Tiny.Container {
 
     // 动画开始
     tween.start();
+  }
+
+  jumpResult() {
+    const antRegion = this.getAntRegion();
+    const boxRegion = this.getBoxRegion();
+
+    return inside(antRegion, boxRegion);
+  }
+
+  getAntRegion() {
+    var { x, y, width, height } = getCollisionRegion(this.ant);
+    x -= this.position.x;
+    y -= this.position.y;
+
+    const realX = x + width / 2 + 10; // 底部中点然后再微调下
+    const realY = y + height;
+
+    this._drawAntRegion(realX, realY);
+
+    return [realX, realY];
+  }
+  _drawAntRegion(x, y) {
+    var mask = new Tiny.Graphics();
+    mask.lineStyle(4, 0x66FF33, 1);
+    mask.drawCircle(x, y, 1);
+    mask.endFill();
+
+    this.addChild(mask);
+  }
+
+  getBoxRegion() {
+    var {x, y, width} = getCollisionRegion(this.targetBox);
+    x -= this.position.x;
+    y -= this.position.y;
+    var delta = 10; // 离边距需要隔一点距离
+
+    var result = [
+      [x + 133, y + delta], // 上
+      [x + width - delta, y + 49], // 右
+      [x + 133, y + 89 - delta], // 下
+      [x + 54 + delta, y + 48], // 左
+    ];
+
+    this._drawBoxRegion(result);
+
+    return result;
+  }
+  _drawBoxRegion(result) {
+    var path = [];
+    result.forEach((r) => {
+      path = path.concat(r);
+    });
+    path = path.concat(result[0]);
+
+    var mask = new Tiny.Graphics();
+    mask.lineStyle(4, 0x66FF33, 1);
+    mask.drawPolygon(path);
+    mask.endFill();
+
+    this.addChild(mask);
   }
 
   compress() {
