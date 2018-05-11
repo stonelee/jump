@@ -10,6 +10,9 @@
 * [3. 斜 45 度地图](https://github.com/stonelee/jump/blob/master/docs/3.md)
 * [4. 碰撞检测](https://github.com/stonelee/jump/blob/master/docs/4.md)
 * [5. 碰撞后的细节优化](https://github.com/stonelee/jump/blob/master/docs/5.md)
+* 6. 聚气效果
+* 7. 重构
+* 8. UI
 
 ## 命令
 
