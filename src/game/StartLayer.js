@@ -1,12 +1,22 @@
+import { caleRelateTargetPos, setPivot } from './utils';
+
 class StartLayer extends Tiny.Container {
   constructor() {
     super();
 
     this.ant = this.createAnt();
     this.currentBox = this.createBox();
+    // 将蚂蚁放到 box 组中
+    this.currentBox.addChild(this.ant);
+    // 位置也得调整下
+    this.ant.setPosition(100, 50);
 
     this.deltaX = 300; // 每次跳跃，向右移动 300
     this.isJumping = false; // 在跳的过程中，不能再跳
+
+    // 统一管理所有 box
+    this.boxes = [];
+    this.boxes.push(this.currentBox);
 
     // 再来一个盒子
     this.targetBox = this.dropBox();
@@ -61,7 +71,14 @@ class StartLayer extends Tiny.Container {
       this.jump(this.deltaX, () => {
         // 跳完后
         this.isJumping = false;
+
+        // 因为要更换 ant 的 group，所以要计算 ant 相对 targetBox 的位置
+        var { x, y } = caleRelateTargetPos(this.ant, this.targetBox);
+        this.ant.setPosition(x, y);
+        this.targetBox.addChild(this.ant);
+
         this.currentBox = this.targetBox;
+        this.boxes.push(this.currentBox);
 
         // 移动屏幕
         this.sceneMove();
@@ -73,6 +90,8 @@ class StartLayer extends Tiny.Container {
   }
 
   jump(deltaX, onComplete) {
+    setPivot(this.ant, this.ant.width / 2, this.ant.height / 2);
+
     const maxHeight = 200; // 跳的最高点
 
     const ant = this.ant; // 上面创建的蚂蚁实例
@@ -84,9 +103,13 @@ class StartLayer extends Tiny.Container {
       x: originX,
       y: originY,
     }).to({ // 结束值
-      rotation: 360, // 旋转 1 周
-      x: originX + deltaX, // 向右移动 deltaX
-      y: [originY - maxHeight, originY], // 设置 2 个关键帧，一个是最高点，一个是最终点。效果就是蚂蚁跳起来然后落下
+      // rotation: 360, // 旋转 1 周
+      // x: originX + deltaX, // 向右移动 deltaX
+      // y: [originY - maxHeight, originY], // 设置 2 个关键帧，一个是最高点，一个是最终点。效果就是蚂蚁跳起来然后落下
+
+      rotation: [180, 320, 360], // 旋转 1 周
+      x: [originX + deltaX * 0.5, originX + deltaX * 0.8, originX + deltaX], // 向右移动 deltaX
+      y: [originY - maxHeight * 0.5, originY - maxHeight * 0.2, originY]
     }, 1000).onUpdate(function() {
       // 设置位置
       ant.setPosition(this.x, this.y);
@@ -103,14 +126,17 @@ class StartLayer extends Tiny.Container {
 
   compress() {
     // 动画 持续 1000ms，y 轴缩放到 0.7
-    this.ant.runAction(Tiny.ScaleTo(1000, {
+    this.currentBox.runAction(Tiny.ScaleTo(1000, {
       scaleY: 0.7,
     }));
   }
 
   compressRestore() {
-    this.ant.removeActions(); // 移除动画
-    this.ant.runAction(Tiny.ScaleTo(500, Tiny.scale(1)));
+    this.currentBox.removeActions(); // 移除动画
+
+    const action = Tiny.ScaleTo(500, Tiny.scale(1));
+    action.setEasing(Tiny.TWEEN.Easing.Bounce.Out); // 回弹效果
+    this.currentBox.runAction(action);
   }
 
   dropBox() {
@@ -135,9 +161,24 @@ class StartLayer extends Tiny.Container {
   }
 
   sceneMove() {
-    this.runAction(Tiny.MoveBy(500, {
+    const action = Tiny.MoveBy(500, {
       x: -this.deltaX,
-    }));
+    });
+
+    action.onComplete = (tween, object) => {
+      const scenePostion = this.position;
+
+      for (var i = this.boxes.length - 1; i >= 0; i--) {
+        const box = this.boxes[i];
+        // 屏幕外的 box 都删掉，防止内存泄露
+        if ((box.x - box.pivot.x + box.width + scenePostion.x) < 0) {
+          box.parent.removeChild(box);
+          this.boxes.splice(i, 1);
+        }
+      }
+    };
+
+    this.runAction(action);
   }
 }
 
