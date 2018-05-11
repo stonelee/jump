@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "image": "tileset-hero.png",
+    "size": {
+      "w": 224,
+      "h": 99
+    },
+    "scale": "1"
+  },
+  "frames": {
+    "tileset-hero-1.png": {
+      "frame": {
+        "x": 10,
+        "y": 10,
+        "w": 92,
+        "h": 79
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 92,
+        "h": 79
+      },
+      "sourceSize": {
+        "w": 92,
+        "h": 79
+      }
+    },
+    "tileset-hero-2.png": {
+      "frame": {
+        "x": 122,
+        "y": 10,
+        "w": 92,
+        "h": 79
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 92,
+        "h": 79
+      },
+      "sourceSize": {
+        "w": 92,
+        "h": 79
+      }
+    }
+  }
+}
