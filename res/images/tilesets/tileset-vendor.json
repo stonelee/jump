@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "image": "tileset-vendor.png",
+    "size": {
+      "w": 278,
+      "h": 76
+    },
+    "scale": "1"
+  },
+  "frames": {
+    "tileset-vendor-continue.png": {
+      "frame": {
+        "x": 10,
+        "y": 10,
+        "w": 119,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 119,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 119,
+        "h": 56
+      }
+    },
+    "tileset-vendor-start.png": {
+      "frame": {
+        "x": 149,
+        "y": 10,
+        "w": 119,
+        "h": 56
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 119,
+        "h": 56
+      },
+      "sourceSize": {
+        "w": 119,
+        "h": 56
+      }
+    }
+  }
+}
