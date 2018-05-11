@@ -7,7 +7,8 @@
     "lint": "eslint src/**",
     "prebuild": "rm -rf dist",
     "build": "webpack-cli --mode=production",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "gh-pages": "git subtree push --prefix dist origin gh-pages"
   },
   "author": "",
   "private": true,
