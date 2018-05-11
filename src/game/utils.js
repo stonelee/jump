@@ -1,3 +1,5 @@
+import { vec2 } from 'gl-matrix';
+
 export const direction = {
   left: -1,
   right: 1,
@@ -79,4 +81,32 @@ export function getCollisionRegion(obj) {
     width: obj.width,
     height: obj.height,
   };
+}
+
+/**
+ * 得到从 _c 点到 _a, _b 所构成的直线的距离
+ * @param {number[]} _c
+ * @param {number[]} _a
+ * @param {number[]} _b
+ */
+export function getDistance(_c, _a, _b) {
+  var c = vec2.fromValues(_c[0], _c[1]);
+  var a = vec2.fromValues(_a[0], _a[1]);
+  var b = vec2.fromValues(_b[0], _b[1]);
+
+  var out = vec2.create();
+  var v = vec2.sub(out, c, a);
+
+  out = vec2.create();
+  var n = vec2.sub(out, b, a);
+
+  var _x = vec2.dot(v, n) / vec2.squaredDistance(b, a);
+
+  out = vec2.create();
+  var _v2 = vec2.scale(out, n, _x);
+
+  out = vec2.create();
+  var v2 = vec2.sub(out, v, _v2);
+
+  return vec2.length(v2);
 }

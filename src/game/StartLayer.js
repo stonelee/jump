@@ -1,4 +1,4 @@
-import { getTargetBoxPos, direction, caleRelateTargetPos, setPivot, getCollisionRegion } from './utils';
+import { getTargetBoxPos, direction, caleRelateTargetPos, setPivot, getCollisionRegion, getDistance } from './utils';
 import inside from 'point-in-polygon';
 
 class StartLayer extends Tiny.Container {
@@ -101,12 +101,13 @@ class StartLayer extends Tiny.Container {
         // 跳完后
         this.isJumping = false;
 
-        const jumpSuccess = this.jumpResult();
-
-        if (jumpSuccess) {
+        const jumpResult = this.jumpResult();
+        if (jumpResult.isInside) {
           this._jumpSuccess();
         } else {
-          this._jumpFail();
+          const dropAction = jumpResult.dropAction;
+          console.log(dropAction);
+          this._jumpFail(dropAction);
         }
       });
     });
@@ -131,8 +132,10 @@ class StartLayer extends Tiny.Container {
     this.targetBox = this.dropBox();
   }
 
-  _jumpFail() {
-    this.reset();
+  _jumpFail(dropAction) {
+    this.antFall(dropAction, () => {
+      this.reset();
+    });
   }
 
   jump(targetDelta, direction, onComplete) {
@@ -172,7 +175,17 @@ class StartLayer extends Tiny.Container {
     const antRegion = this.getAntRegion();
     const boxRegion = this.getBoxRegion();
 
-    return inside(antRegion, boxRegion);
+    var isInside = inside(antRegion, boxRegion);
+
+    var dropAction = '';
+    if (!isInside) {
+      dropAction = this.getDropAction(antRegion, boxRegion);
+    }
+
+    return {
+      isInside,
+      dropAction,
+    };
   }
 
   getAntRegion() {
@@ -226,6 +239,106 @@ class StartLayer extends Tiny.Container {
     mask.endFill();
 
     this.addChild(mask);
+  }
+
+  getDropAction(antRegion, boxRegion) {
+    // 垂直下落
+    var dropAction = 'drop';
+
+    var r = this.ant.width / 2; // 底部半径
+    var d1, d2;
+    // 向右上方跳跃
+    if (this.targetBoxDirection === direction.right) {
+      d1 = getDistance(antRegion, boxRegion[0], boxRegion[1]);
+      d2 = getDistance(antRegion, boxRegion[2], boxRegion[3]);
+      // 如果离右边更近
+      if (d1 < d2) {
+        // 如果与右边缘的距离小于底部半径
+        if (d1 < r) {
+          // 在右侧边缘
+          dropAction = 'right';
+        } else {
+          // 在右侧垂直下落
+          dropAction = 'right-drop';
+        }
+      } else {
+        if (d2 < r) {
+          // 在左侧边缘
+          dropAction = 'left';
+        } else {
+          // 在左侧垂直下落
+          dropAction = 'left-drop';
+        }
+      }
+    } else {
+      // 向左上方跳跃
+      d1 = getDistance(antRegion, boxRegion[0], boxRegion[3]);
+      d2 = getDistance(antRegion, boxRegion[1], boxRegion[2]);
+      // 如果离上边更近
+      if (d1 < d2) {
+        // 如果与上边缘的距离小于底部半径
+        if (d1 < r) {
+          // 在上边缘
+          dropAction = 'top';
+        } else {
+          // 在上方垂直下落
+          dropAction = 'top-drop';
+        }
+      } else {
+        if (d2 < r) {
+          // 在下边缘
+          dropAction = 'bottom';
+        } else {
+          // 在下方垂直下落
+          dropAction = 'bottom-drop';
+        }
+      }
+    }
+
+    return dropAction;
+  }
+
+  // 蚂蚁摔倒
+  antFall(dropAction, onComplete) {
+    const ant = this.ant;
+    setPivot(ant, ant.width / 2, ant.height);
+    ant.setRotation(0);
+
+    var action;
+    switch (dropAction) {
+      case 'right':
+        action = Tiny.RotateTo(1000, {rotation: Tiny.deg2radian(55)});
+        break;
+      case 'left':
+        action = Tiny.RotateTo(2000, {rotation: Tiny.deg2radian(-125)});
+        break;
+      case 'top':
+        action = Tiny.RotateTo(1000, {rotation: Tiny.deg2radian(-55)});
+        break;
+      case 'bottom':
+        action = Tiny.RotateTo(2000, {rotation: Tiny.deg2radian(125)});
+        break;
+      case 'right-drop':
+      case 'top-drop':
+        ant.parent.setChildIndex(ant, 0); // TODO
+        action = Tiny.MoveBy(500, {x: 0, y: 50});
+        break;
+      case 'left-drop':
+      case 'bottom-drop':
+      case 'drop':
+        action = Tiny.MoveBy(500, {x: 0, y: 50});
+        break;
+      default:
+        onComplete && onComplete();
+        break;
+    }
+
+    if (action) {
+      if (onComplete) {
+        action.onComplete = onComplete;
+      }
+      ant.runAction(action);
+    }
   }
 
   compress() {

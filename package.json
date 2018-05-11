@@ -38,6 +38,7 @@
     "webpack-dev-server": "^3.1.3"
   },
   "dependencies": {
+    "gl-matrix": "^2.5.1",
     "point-in-polygon": "^1.0.1",
     "tinyjs-plugin-ui": "^0.1.1"
   }
