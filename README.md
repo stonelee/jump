@@ -1,8 +1,15 @@
-# jump
+# 仿微信「跳一跳」
 
 > The Tiny.js game project build by tinyjs-cli
 
 ![](https://zos.alipayobjects.com/rmsportal/nJBojwdMJfUqpCWvwyoA.png@120w)
+
+## 目录：
+* [1. 简单实现](https://github.com/stonelee/jump/blob/master/docs/1.md)
+* [2. 优化](https://github.com/stonelee/jump/blob/master/docs/2.md)
+* [3. 斜 45 度地图](https://github.com/stonelee/jump/blob/master/docs/3.md)
+* [4. 碰撞检测](https://github.com/stonelee/jump/blob/master/docs/4.md)
+* [5. 碰撞后的细节优化](https://github.com/stonelee/jump/blob/master/docs/5.md)
 
 ## 命令
 
