@@ -1,4 +1,4 @@
-import { caleRelateTargetPos, setPivot } from './utils';
+import { getTargetBoxPos, direction, caleRelateTargetPos, setPivot } from './utils';
 
 class StartLayer extends Tiny.Container {
   constructor() {
@@ -11,8 +11,10 @@ class StartLayer extends Tiny.Container {
     // 位置也得调整下
     this.ant.setPosition(100, 50);
 
-    this.deltaX = 300; // 每次跳跃，向右移动 300
     this.isJumping = false; // 在跳的过程中，不能再跳
+    this.targetBoxDirection = direction.right; // 下一个盒子的方向
+    this.targetBoxDelta = 200; // 下一个盒子的距离
+    this.numInOneDirection = 2; // 在一个方向上的连续盒子数量
 
     // 统一管理所有 box
     this.boxes = [];
@@ -42,8 +44,7 @@ class StartLayer extends Tiny.Container {
   createBox() {
     const box = Tiny.Sprite.fromImage(Tiny.resources.boxPng);
     box.setPivot(box.width / 2, box.height);
-    // 位置得调整一下，使得蚂蚁能够正好站在盒子上
-    box.setPosition(100, 400);
+    box.setPosition(100, 600);
     box.name = 'box';
 
     // 如果使用 addChild，会发现盒子将蚂蚁盖起来了，所以使用 addChildAt 来将盒子放到蚂蚁下面
@@ -55,7 +56,9 @@ class StartLayer extends Tiny.Container {
     const canvas = Tiny.app.view;
     const supportTouch = 'ontouchstart' in window;
 
+    this.pressTime = +Date.now();
     canvas.addEventListener(supportTouch ? 'touchstart' : 'mousedown', () => {
+      this.pressTime = +Date.now();
       // 蚂蚁压缩
       this.compress();
     });
@@ -66,9 +69,17 @@ class StartLayer extends Tiny.Container {
 
       // 跳的过程中就不能再跳了
       if (this.isJumping) return;
-
       this.isJumping = true;
-      this.jump(this.deltaX, () => {
+
+      const deltaTime = +Date.now() - this.pressTime;
+      var targetBoxDelta = 0.8 * deltaTime;
+      const maxTargetDelta = 600;
+      if (targetBoxDelta > maxTargetDelta) {
+        targetBoxDelta = maxTargetDelta;
+      }
+
+      // var targetBoxDelta = this.targetBoxDelta;
+      this.jump(targetBoxDelta, this.targetBoxDirection, () => {
         // 跳完后
         this.isJumping = false;
 
@@ -80,6 +91,9 @@ class StartLayer extends Tiny.Container {
         this.currentBox = this.targetBox;
         this.boxes.push(this.currentBox);
 
+        // 确定下一个盒子的方向和位移
+        this.setTargetBoxDirectionAndDelta();
+
         // 移动屏幕
         this.sceneMove();
 
@@ -89,7 +103,7 @@ class StartLayer extends Tiny.Container {
     });
   }
 
-  jump(deltaX, onComplete) {
+  jump(targetDelta, direction, onComplete) {
     setPivot(this.ant, this.ant.width / 2, this.ant.height / 2);
 
     const maxHeight = 200; // 跳的最高点
@@ -97,19 +111,17 @@ class StartLayer extends Tiny.Container {
     const ant = this.ant; // 上面创建的蚂蚁实例
     const originX = ant.position.x;
     const originY = ant.position.y;
+    const targetPos = getTargetBoxPos(this.ant.position, targetDelta, direction);
+    const deltaX = targetPos.x - originX;
 
     const tween = new Tiny.TWEEN.Tween({ // 起始值
       rotation: 0,
       x: originX,
       y: originY,
     }).to({ // 结束值
-      // rotation: 360, // 旋转 1 周
-      // x: originX + deltaX, // 向右移动 deltaX
-      // y: [originY - maxHeight, originY], // 设置 2 个关键帧，一个是最高点，一个是最终点。效果就是蚂蚁跳起来然后落下
-
-      rotation: [180, 320, 360], // 旋转 1 周
-      x: [originX + deltaX * 0.5, originX + deltaX * 0.8, originX + deltaX], // 向右移动 deltaX
-      y: [originY - maxHeight * 0.5, originY - maxHeight * 0.2, originY]
+      rotation: [180 * direction, 320 * direction, 360 * direction], // 旋转 1 周
+      x: [originX + deltaX * 0.5, originX + deltaX * 0.8, originX + deltaX],
+      y: [targetPos.y - maxHeight * 0.5, targetPos.y - maxHeight * 0.2, targetPos.y],
     }, 1000).onUpdate(function() {
       // 设置位置
       ant.setPosition(this.x, this.y);
@@ -139,15 +151,25 @@ class StartLayer extends Tiny.Container {
     this.currentBox.runAction(action);
   }
 
+  setTargetBoxDirectionAndDelta() {
+    this.numInOneDirection -= 1;
+    if (this.numInOneDirection <= 0) {
+      this.targetBoxDirection = -this.targetBoxDirection; // 反向
+      this.numInOneDirection = Tiny.randomInt(1, 3);
+    }
+
+    this.targetBoxDelta = Tiny.randomInt(150, 300);
+  }
+
   dropBox() {
     var box = Tiny.Sprite.fromImage(Tiny.resources.boxPng);
     box.setPivot(box.width / 2, box.height);
     box.name = 'box';
 
+    const targetPos = getTargetBoxPos(this.currentBox.position, this.targetBoxDelta, this.targetBoxDirection);
+
     const deltaY = 100; // 从 deltaY 开始掉落
-    const x = this.currentBox.x + this.deltaX;
-    const y = this.currentBox.y - deltaY;
-    box.setPosition(x, y); // 设置初始位置
+    box.setPosition(targetPos.x, targetPos.y - deltaY); // 设置初始位置
 
     // 下落动画
     const action = Tiny.MoveBy(500, {
@@ -161,8 +183,10 @@ class StartLayer extends Tiny.Container {
   }
 
   sceneMove() {
+    const targetPos = getTargetBoxPos(this.position, this.targetBoxDelta, this.targetBoxDirection);
     const action = Tiny.MoveBy(500, {
-      x: -this.deltaX,
+      x: this.position.x - targetPos.x,
+      y: this.position.y - targetPos.y,
     });
 
     action.onComplete = (tween, object) => {
@@ -170,8 +194,9 @@ class StartLayer extends Tiny.Container {
 
       for (var i = this.boxes.length - 1; i >= 0; i--) {
         const box = this.boxes[i];
-        // 屏幕外的 box 都删掉，防止内存泄露
-        if ((box.x - box.pivot.x + box.width + scenePostion.x) < 0) {
+
+        // 屏幕下方的 box 不会再出现了，所以可以删掉，防止内存泄露
+        if ((box.y - box.height + scenePostion.y) > Tiny.WIN_SIZE.height) {
           box.parent.removeChild(box);
           this.boxes.splice(i, 1);
         }

@@ -1,3 +1,22 @@
+export const direction = {
+  left: -1,
+  right: 1,
+};
+
+/**
+ * 从 originPos 按照指定方向 direction，移动距离 delta，返回新的坐标
+ * @param {object} originPos
+ * @param {number} delta
+ * @param {number} direction
+ */
+export function getTargetBoxPos(originPos, delta, direction) {
+  const deg = 30;
+
+  const x = originPos.x + direction * delta * Math.cos(Tiny.deg2radian(deg));
+  const y = originPos.y - delta * Math.sin(Tiny.deg2radian(deg)); // 只能向上运动
+  return { x, y };
+}
+
 /**
  * 得到 obj 在 targetContainer 中的相对坐标
  * @param {Tiny.DisplayObject} obj
