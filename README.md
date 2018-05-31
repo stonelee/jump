@@ -23,8 +23,8 @@
 ## 关于 Tiny.js
 
 - `官网`: http://tinyjs.net
-- `指南`: http://tinyjs.net/#/tutorial/start
-- `API`: http://tinyjs.net/docs/
+- `指南`: http://tinyjs.net/guide/start.html
+- `API`: http://tinyjs.net/api/
 
 ## 关于标准版
 
@@ -35,4 +35,4 @@
 
 > 注意：
 >
-> 由于 [tinyjs-resource-loader](http://tinyjs.net/#/tools/tinyjs-resource-loader) 依赖 [ImageMagick](https://www.imagemagick.org/script/download.php)，所以你需要安装 ImageMagick。
+> 由于 [tinyjs-resource-loader](http://tinyjs.net/tools/tinyjs-resource-loader.html) 依赖 [ImageMagick](https://www.imagemagick.org/script/download.php)，所以你需要安装 ImageMagick。
